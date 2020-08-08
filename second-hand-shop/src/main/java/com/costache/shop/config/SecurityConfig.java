@@ -1,4 +1,4 @@
-package com.costache.shop.Login;
+package com.costache.shop.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
