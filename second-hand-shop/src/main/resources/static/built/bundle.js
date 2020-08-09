@@ -34103,6 +34103,10 @@ var ReactDOM = __webpack_require__(/*! react-dom */ "./node_modules/react-dom/in
 
 var client = __webpack_require__(/*! ./client */ "./src/main/js/client.js");
 
+var root = '/api';
+
+var follow = __webpack_require__(/*! ./follow */ "./src/main/js/follow.js");
+
 var App = /*#__PURE__*/function (_React$Component) {
   _inherits(App, _React$Component);
 
@@ -34115,31 +34119,132 @@ var App = /*#__PURE__*/function (_React$Component) {
 
     _this = _super.call(this, props);
     _this.state = {
-      employees: []
+      employees: [],
+      attributes: [],
+      pageSize: 2,
+      links: {}
     };
+    _this.updatePageSize = _this.updatePageSize.bind(_assertThisInitialized(_this));
+    _this.onCreate = _this.onCreate.bind(_assertThisInitialized(_this));
+    _this.onDelete = _this.onDelete.bind(_assertThisInitialized(_this));
+    _this.onNavigate = _this.onNavigate.bind(_assertThisInitialized(_this));
     return _this;
   }
 
   _createClass(App, [{
-    key: "componentDidMount",
-    value: function componentDidMount() {
+    key: "updatePageSize",
+    value: function updatePageSize(pageSize) {
+      if (pageSize !== this.state.pageSize) {
+        this.loadFromServer(pageSize);
+      }
+    }
+  }, {
+    key: "onDelete",
+    value: function onDelete(employee) {
       var _this2 = this;
 
       client({
-        method: 'GET',
-        path: '/api/employees'
+        method: 'DELETE',
+        path: employee._links.self.href
       }).done(function (response) {
-        _this2.setState({
-          employees: response.entity._embedded.employees
+        _this2.loadFromServer(_this2.state.pageSize);
+      });
+    }
+  }, {
+    key: "onNavigate",
+    value: function onNavigate(navUri) {
+      var _this3 = this;
+
+      client({
+        method: 'GET',
+        path: navUri
+      }).done(function (employeeCollection) {
+        _this3.setState({
+          employees: employeeCollection.entity._embedded.employees,
+          attributes: _this3.state.attributes,
+          pageSize: _this3.state.pageSize,
+          links: employeeCollection.entity._links
         });
       });
     }
   }, {
+    key: "onCreate",
+    value: function onCreate(newEmployee) {
+      var _this4 = this;
+
+      follow(client, root, ['employees']).then(function (employeeCollection) {
+        return client({
+          method: 'POST',
+          path: employeeCollection.entity._links.self.href,
+          entity: newEmployee,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      }).then(function (response) {
+        return follow(client, root, [{
+          rel: 'employees',
+          params: {
+            'size': _this4.state.pageSize
+          }
+        }]);
+      }).done(function (response) {
+        if (typeof response.entity._links.last !== "undefined") {
+          _this4.onNavigate(response.entity._links.last.href);
+        } else {
+          _this4.onNavigate(response.entity._links.self.href);
+        }
+      });
+    }
+  }, {
+    key: "loadFromServer",
+    value: function loadFromServer(pageSize) {
+      var _this5 = this;
+
+      follow(client, root, [{
+        rel: 'employees',
+        params: {
+          size: pageSize
+        }
+      }]).then(function (employeeCollection) {
+        return client({
+          method: 'GET',
+          path: employeeCollection.entity._links.profile.href,
+          headers: {
+            'Accept': 'application/schema+json'
+          }
+        }).then(function (schema) {
+          _this5.schema = schema.entity;
+          return employeeCollection;
+        });
+      }).done(function (employeeCollection) {
+        _this5.setState({
+          employees: employeeCollection.entity._embedded.employees,
+          attributes: Object.keys(_this5.schema.properties),
+          pageSize: pageSize,
+          links: employeeCollection.entity._links
+        });
+      });
+    }
+  }, {
+    key: "componentDidMount",
+    value: function componentDidMount() {
+      this.loadFromServer(this.state.pageSize);
+    }
+  }, {
     key: "render",
     value: function render() {
-      return /*#__PURE__*/React.createElement(EmployeeList, {
-        employees: this.state.employees
-      });
+      return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(CreateDialog, {
+        attributes: this.state.attributes,
+        onCreate: this.onCreate
+      }), /*#__PURE__*/React.createElement(EmployeeList, {
+        employees: this.state.employees,
+        links: this.state.links,
+        pageSize: this.state.pageSize,
+        onNavigate: this.onNavigate,
+        onDelete: this.onDelete,
+        updatePageSize: this.updatePageSize
+      }));
     }
   }]);
 
@@ -34151,22 +34256,103 @@ var EmployeeList = /*#__PURE__*/function (_React$Component2) {
 
   var _super2 = _createSuper(EmployeeList);
 
-  function EmployeeList() {
+  function EmployeeList(props) {
+    var _this6;
+
     _classCallCheck(this, EmployeeList);
 
-    return _super2.apply(this, arguments);
+    _this6 = _super2.call(this, props);
+    _this6.handleNavFirst = _this6.handleNavFirst.bind(_assertThisInitialized(_this6));
+    _this6.handleNavPrev = _this6.handleNavPrev.bind(_assertThisInitialized(_this6));
+    _this6.handleNavNext = _this6.handleNavNext.bind(_assertThisInitialized(_this6));
+    _this6.handleNavLast = _this6.handleNavLast.bind(_assertThisInitialized(_this6));
+    _this6.handleInput = _this6.handleInput.bind(_assertThisInitialized(_this6));
+    return _this6;
   }
 
   _createClass(EmployeeList, [{
+    key: "handleInput",
+    value: function handleInput(e) {
+      e.preventDefault();
+      var pageSize = ReactDOM.findDOMNode(this.refs.pageSize).value;
+
+      if (/^[0-9]+$/.test(pageSize)) {
+        this.props.updatePageSize(pageSize);
+      } else {
+        ReactDOM.findDOMNode(this.refs.pageSize).value = pageSize.substring(0, pageSize.length - 1);
+      }
+    }
+  }, {
+    key: "handleNavFirst",
+    value: function handleNavFirst(e) {
+      e.preventDefault();
+      this.props.onNavigate(this.props.links.first.href);
+    }
+  }, {
+    key: "handleNavPrev",
+    value: function handleNavPrev(e) {
+      e.preventDefault();
+      this.props.onNavigate(this.props.links.prev.href);
+    }
+  }, {
+    key: "handleNavNext",
+    value: function handleNavNext(e) {
+      e.preventDefault();
+      this.props.onNavigate(this.props.links.next.href);
+    }
+  }, {
+    key: "handleNavLast",
+    value: function handleNavLast(e) {
+      e.preventDefault();
+      this.props.onNavigate(this.props.links.last.href);
+    }
+  }, {
     key: "render",
     value: function render() {
+      var _this7 = this;
+
       var employees = this.props.employees.map(function (employee) {
         return /*#__PURE__*/React.createElement(Employee, {
           key: employee._links.self.href,
-          employee: employee
+          employee: employee,
+          onDelete: _this7.props.onDelete
         });
       });
-      return /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tbody", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "First Name"), /*#__PURE__*/React.createElement("th", null, "Last Name"), /*#__PURE__*/React.createElement("th", null, "Description")), employees));
+      var navLinks = [];
+
+      if ("first" in this.props.links) {
+        navLinks.push( /*#__PURE__*/React.createElement("button", {
+          key: "first",
+          onClick: this.handleNavFirst
+        }, "<<"));
+      }
+
+      if ("prev" in this.props.links) {
+        navLinks.push( /*#__PURE__*/React.createElement("button", {
+          key: "prev",
+          onClick: this.handleNavPrev
+        }, "<"));
+      }
+
+      if ("next" in this.props.links) {
+        navLinks.push( /*#__PURE__*/React.createElement("button", {
+          key: "next",
+          onClick: this.handleNavNext
+        }, ">"));
+      }
+
+      if ("last" in this.props.links) {
+        navLinks.push( /*#__PURE__*/React.createElement("button", {
+          key: "last",
+          onClick: this.handleNavLast
+        }, ">>"));
+      }
+
+      return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("input", {
+        ref: "pageSize",
+        defaultValue: this.props.pageSize,
+        onInput: this.handleInput
+      }), /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tbody", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "First Name"), /*#__PURE__*/React.createElement("th", null, "Last Name"), /*#__PURE__*/React.createElement("th", null, "Description"), /*#__PURE__*/React.createElement("th", null)), employees)), /*#__PURE__*/React.createElement("div", null, navLinks));
     }
   }]);
 
@@ -34178,20 +34364,95 @@ var Employee = /*#__PURE__*/function (_React$Component3) {
 
   var _super3 = _createSuper(Employee);
 
-  function Employee() {
+  function Employee(props) {
+    var _this8;
+
     _classCallCheck(this, Employee);
 
-    return _super3.apply(this, arguments);
+    _this8 = _super3.call(this, props);
+    _this8.handleDelete = _this8.handleDelete.bind(_assertThisInitialized(_this8));
+    return _this8;
   }
 
   _createClass(Employee, [{
+    key: "handleDelete",
+    value: function handleDelete() {
+      this.props.onDelete(this.props.employee);
+    }
+  }, {
     key: "render",
     value: function render() {
-      return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, this.props.employee.firstName), /*#__PURE__*/React.createElement("td", null, this.props.employee.lastName), /*#__PURE__*/React.createElement("td", null, this.props.employee.description));
+      return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, this.props.employee.firstName), /*#__PURE__*/React.createElement("td", null, this.props.employee.lastName), /*#__PURE__*/React.createElement("td", null, this.props.employee.description), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
+        onClick: this.handleDelete
+      }, "Delete")));
     }
   }]);
 
   return Employee;
+}(React.Component);
+
+var CreateDialog = /*#__PURE__*/function (_React$Component4) {
+  _inherits(CreateDialog, _React$Component4);
+
+  var _super4 = _createSuper(CreateDialog);
+
+  function CreateDialog(props) {
+    var _this9;
+
+    _classCallCheck(this, CreateDialog);
+
+    _this9 = _super4.call(this, props);
+    _this9.handleSubmit = _this9.handleSubmit.bind(_assertThisInitialized(_this9));
+    return _this9;
+  }
+
+  _createClass(CreateDialog, [{
+    key: "handleSubmit",
+    value: function handleSubmit(e) {
+      var _this10 = this;
+
+      e.preventDefault();
+      var newEmployee = {};
+      this.props.attributes.forEach(function (attribute) {
+        newEmployee[attribute] = ReactDOM.findDOMNode(_this10.refs[attribute]).value.trim();
+      });
+      this.props.onCreate(newEmployee); // clear out the dialog's inputs
+
+      this.props.attributes.forEach(function (attribute) {
+        ReactDOM.findDOMNode(_this10.refs[attribute]).value = '';
+      }); // Navigate away from the dialog to hide it.
+
+      window.location = "#";
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var inputs = this.props.attributes.map(function (attribute) {
+        return /*#__PURE__*/React.createElement("p", {
+          key: attribute
+        }, /*#__PURE__*/React.createElement("input", {
+          type: "text",
+          placeholder: attribute,
+          ref: attribute,
+          className: "field"
+        }));
+      });
+      return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("a", {
+        href: "#createEmployee"
+      }, "Create"), /*#__PURE__*/React.createElement("div", {
+        id: "createEmployee",
+        className: "modalDialog"
+      }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("a", {
+        href: "#",
+        title: "Close",
+        className: "close"
+      }, "X"), /*#__PURE__*/React.createElement("h2", null, "Create new employee"), /*#__PURE__*/React.createElement("form", null, inputs, /*#__PURE__*/React.createElement("button", {
+        onClick: this.handleSubmit
+      }, "Create")))));
+    }
+  }]);
+
+  return CreateDialog;
 }(React.Component);
 
 ReactDOM.render( /*#__PURE__*/React.createElement(App, null), document.getElementById('react'));
@@ -34230,6 +34491,55 @@ module.exports = rest.wrap(mime, {
     'Accept': 'application/hal+json'
   }
 });
+
+/***/ }),
+
+/***/ "./src/main/js/follow.js":
+/*!*******************************!*\
+  !*** ./src/main/js/follow.js ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = function follow(api, rootPath, relArray) {
+  var root = api({
+    method: 'GET',
+    path: rootPath
+  });
+  return relArray.reduce(function (root, arrayItem) {
+    var rel = typeof arrayItem === 'string' ? arrayItem : arrayItem.rel;
+    return traverseNext(root, rel, arrayItem);
+  }, root);
+
+  function traverseNext(root, rel, arrayItem) {
+    return root.then(function (response) {
+      if (hasEmbeddedRel(response.entity, rel)) {
+        return response.entity._embedded[rel];
+      }
+
+      if (!response.entity._links) {
+        return [];
+      }
+
+      if (typeof arrayItem === 'string') {
+        return api({
+          method: 'GET',
+          path: response.entity._links[rel].href
+        });
+      } else {
+        return api({
+          method: 'GET',
+          path: response.entity._links[rel].href,
+          params: arrayItem.params
+        });
+      }
+    });
+  }
+
+  function hasEmbeddedRel(entity, rel) {
+    return entity._embedded && entity._embedded.hasOwnProperty(rel);
+  }
+};
 
 /***/ }),
 
