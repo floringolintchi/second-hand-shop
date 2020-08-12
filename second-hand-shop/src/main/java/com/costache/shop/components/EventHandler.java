@@ -10,10 +10,10 @@ import org.springframework.hateoas.server.EntityLinks;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
-import static com.costache.shop.components.WebSocketConfiguration.MESSAGE_PREFIX;
+import static com.costache.shop.components.WebSocketConfiguration.*;
 
 @Component
-@RepositoryEventHandler({Employee.class})
+@RepositoryEventHandler(Employee.class)
 public class EventHandler {
 
     private final SimpMessagingTemplate websocket;
@@ -29,7 +29,7 @@ public class EventHandler {
     @HandleAfterCreate
     public void newEmployee(Employee employee){
         this.websocket.convertAndSend(
-                MESSAGE_PREFIX + "/deleteEmployee", getPath(employee));
+                MESSAGE_PREFIX + "/newEmployee", getPath(employee));
     }
 
     @HandleAfterDelete

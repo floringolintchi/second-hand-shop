@@ -1,9 +1,7 @@
 package com.costache.shop.components;
 
 import com.costache.shop.entities.Employee;
-import com.costache.shop.entities.RegisteredUser;
 import com.costache.shop.repositories.EmployeeRepository;
-import com.costache.shop.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
