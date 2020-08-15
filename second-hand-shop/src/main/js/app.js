@@ -29,27 +29,43 @@ class App extends React.Component {
     }
 
     onUpdate(employee, updatedEmployee) {
-    	client({
-    		method: 'PUT',
-    		path: employee.entity._links.self.href,
-    		entity: updatedEmployee,
-    		headers: {
-    			'Content-Type': 'application/json',
-    			'If-Match': employee.headers.Etag
-    		}
-    	}).done(response => {
-    		this.loadFromServer(this.state.pageSize);
-    	}, response => {
-    		if (response.status.code === 412) {
-    			alert('DENIED: Unable to update ' +
-    				employee.entity._links.self.href + '. Your copy is stale.');
-    		}
-    	});
+    	if(employee.entity.manager.name === this.state.loggedInManager) {
+    		updatedEmployee["manager"] = employee.entity.manager;
+    		client({
+    			method: 'PUT',
+    			path: employee.entity._links.self.href,
+    			entity: updatedEmployee,
+    			headers: {
+    				'Content-Type': 'application/json',
+    				'If-Match': employee.headers.Etag
+    			}
+    		}).done(response => {
+    			/* Let the websocket handler update the state */
+    		}, response => {
+    			if (response.status.code === 403) {
+    				alert('ACCESS DENIED: You are not authorized to update ' +
+    					employee.entity._links.self.href);
+    			}
+    			if (response.status.code === 412) {
+    				alert('DENIED: Unable to update ' + employee.entity._links.self.href +
+    					'. Your copy is stale.');
+    			}
+    		});
+    	} else {
+    		alert("You are not authorized to update");
+    	}
     }
 
 	onDelete(employee) {
-    		client({method: 'DELETE', path: employee.entity._links.self.href});
-    	}
+    	client({method: 'DELETE', path: employee.entity._links.self.href}
+    	).done(response => {/* let the websocket handle updating the UI */},
+    	response => {
+    		if (response.status.code === 403) {
+    			alert('ACCESS DENIED: You are not authorized to delete ' +
+    				employee.entity._links.self.href);
+    		}
+    	});
+    }
 
 	onNavigate(navUri) {
     		client({
@@ -90,36 +106,54 @@ class App extends React.Component {
     }
 
 	loadFromServer(pageSize) {
-    	follow(client, root, [
-    		{rel: 'employees', params: {size: pageSize}}]
-    	).then(employeeCollection => {
-    		return client({
-    			method: 'GET',
-    			path: employeeCollection.entity._links.profile.href,
-    			headers: {'Accept': 'application/schema+json'}
-    		}).then(schema => {
-    			this.schema = schema.entity;
-    			this.links = employeeCollection.entity._links;
-    			return employeeCollection;
+    		follow(client, root, [
+    				{rel: 'employees', params: {size: pageSize}}]
+    		).then(employeeCollection => {
+    			return client({
+    				method: 'GET',
+    				path: employeeCollection.entity._links.profile.href,
+    				headers: {'Accept': 'application/schema+json'}
+    			}).then(schema => {
+    				// tag::json-schema-filter[]
+    				/**
+    				 * Filter unneeded JSON Schema properties, like uri references and
+    				 * subtypes ($ref).
+    				 */
+    				Object.keys(schema.entity.properties).forEach(function (property) {
+    					if (schema.entity.properties[property].hasOwnProperty('format') &&
+    						schema.entity.properties[property].format === 'uri') {
+    						delete schema.entity.properties[property];
+    					}
+    					else if (schema.entity.properties[property].hasOwnProperty('$ref')) {
+    						delete schema.entity.properties[property];
+    					}
+    				});
+
+    				this.schema = schema.entity;
+    				this.links = employeeCollection.entity._links;
+    				return employeeCollection;
+    				// end::json-schema-filter[]
+    			});
+    		}).then(employeeCollection => {
+    			this.page = employeeCollection.entity.page;
+    			return employeeCollection.entity._embedded.employees.map(employee =>
+    					client({
+    						method: 'GET',
+    						path: employee._links.self.href
+    					})
+    			);
+    		}).then(employeePromises => {
+    			return when.all(employeePromises);
+    		}).done(employees => {
+    			this.setState({
+    				page: this.page,
+    				employees: employees,
+    				attributes: Object.keys(this.schema.properties),
+    				pageSize: pageSize,
+    				links: this.links
+    			});
     		});
-    	}).then(employeeCollection => {
-    		return employeeCollection.entity._embedded.employees.map(employee =>
-    				client({
-    					method: 'GET',
-    					path: employee._links.self.href
-    				})
-    		);
-    	}).then(employeePromises => {
-    		return when.all(employeePromises);
-    	}).done(employees => {
-    		this.setState({
-    			employees: employees,
-    			attributes: Object.keys(this.schema.properties),
-    			pageSize: pageSize,
-    			links: this.links
-    		});
-    	});
-    }
+    	}
 
     refreshAndGoToLastPage(message) {
     	follow(client, root, [{
@@ -295,10 +329,12 @@ class Employee extends React.Component {
     				<td>{this.props.employee.entity.firstName}</td>
     				<td>{this.props.employee.entity.lastName}</td>
     				<td>{this.props.employee.entity.description}</td>
+    				<td>{this.props.employee.entity.manager.name}</td>
     				<td>
     					<UpdateDialog employee={this.props.employee}
     								  attributes={this.props.attributes}
-    								  onUpdate={this.props.onUpdate}/>
+    								  onUpdate={this.props.onUpdate}
+    								  loggedInManager={this.props.loggedInManager}/>
     				</td>
     				<td>
     					<button onClick={this.handleDelete}>Delete</button>

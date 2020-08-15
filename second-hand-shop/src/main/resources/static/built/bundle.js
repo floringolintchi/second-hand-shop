@@ -41177,23 +41177,30 @@ var App = /*#__PURE__*/function (_React$Component) {
   }, {
     key: "onUpdate",
     value: function onUpdate(employee, updatedEmployee) {
-      var _this2 = this;
+      if (employee.entity.manager.name === this.state.loggedInManager) {
+        updatedEmployee["manager"] = employee.entity.manager;
+        client({
+          method: 'PUT',
+          path: employee.entity._links.self.href,
+          entity: updatedEmployee,
+          headers: {
+            'Content-Type': 'application/json',
+            'If-Match': employee.headers.Etag
+          }
+        }).done(function (response) {
+          /* Let the websocket handler update the state */
+        }, function (response) {
+          if (response.status.code === 403) {
+            alert('ACCESS DENIED: You are not authorized to update ' + employee.entity._links.self.href);
+          }
 
-      client({
-        method: 'PUT',
-        path: employee.entity._links.self.href,
-        entity: updatedEmployee,
-        headers: {
-          'Content-Type': 'application/json',
-          'If-Match': employee.headers.Etag
-        }
-      }).done(function (response) {
-        _this2.loadFromServer(_this2.state.pageSize);
-      }, function (response) {
-        if (response.status.code === 412) {
-          alert('DENIED: Unable to update ' + employee.entity._links.self.href + '. Your copy is stale.');
-        }
-      });
+          if (response.status.code === 412) {
+            alert('DENIED: Unable to update ' + employee.entity._links.self.href + '. Your copy is stale.');
+          }
+        });
+      } else {
+        alert("You are not authorized to update");
+      }
     }
   }, {
     key: "onDelete",
@@ -41201,19 +41208,25 @@ var App = /*#__PURE__*/function (_React$Component) {
       client({
         method: 'DELETE',
         path: employee.entity._links.self.href
+      }).done(function (response) {
+        /* let the websocket handle updating the UI */
+      }, function (response) {
+        if (response.status.code === 403) {
+          alert('ACCESS DENIED: You are not authorized to delete ' + employee.entity._links.self.href);
+        }
       });
     }
   }, {
     key: "onNavigate",
     value: function onNavigate(navUri) {
-      var _this3 = this;
+      var _this2 = this;
 
       client({
         method: 'GET',
         path: navUri
       }).then(function (employeeCollection) {
-        _this3.links = employeeCollection.entity._links;
-        _this3.page = employeeCollection.entity.page;
+        _this2.links = employeeCollection.entity._links;
+        _this2.page = employeeCollection.entity.page;
         return employeeCollection.entity._embedded.employees.map(function (employee) {
           return client({
             method: 'GET',
@@ -41223,12 +41236,12 @@ var App = /*#__PURE__*/function (_React$Component) {
       }).then(function (employeePromises) {
         return when.all(employeePromises);
       }).done(function (employees) {
-        _this3.setState({
-          page: _this3.page,
+        _this2.setState({
+          page: _this2.page,
           employees: employees,
-          attributes: Object.keys(_this3.schema.properties),
-          pageSize: _this3.state.pageSize,
-          links: _this3.links
+          attributes: Object.keys(_this2.schema.properties),
+          pageSize: _this2.state.pageSize,
+          links: _this2.links
         });
       });
     }
@@ -41249,7 +41262,7 @@ var App = /*#__PURE__*/function (_React$Component) {
   }, {
     key: "loadFromServer",
     value: function loadFromServer(pageSize) {
-      var _this4 = this;
+      var _this3 = this;
 
       follow(client, root, [{
         rel: 'employees',
@@ -41264,11 +41277,25 @@ var App = /*#__PURE__*/function (_React$Component) {
             'Accept': 'application/schema+json'
           }
         }).then(function (schema) {
-          _this4.schema = schema.entity;
-          _this4.links = employeeCollection.entity._links;
-          return employeeCollection;
+          // tag::json-schema-filter[]
+
+          /**
+           * Filter unneeded JSON Schema properties, like uri references and
+           * subtypes ($ref).
+           */
+          Object.keys(schema.entity.properties).forEach(function (property) {
+            if (schema.entity.properties[property].hasOwnProperty('format') && schema.entity.properties[property].format === 'uri') {
+              delete schema.entity.properties[property];
+            } else if (schema.entity.properties[property].hasOwnProperty('$ref')) {
+              delete schema.entity.properties[property];
+            }
+          });
+          _this3.schema = schema.entity;
+          _this3.links = employeeCollection.entity._links;
+          return employeeCollection; // end::json-schema-filter[]
         });
       }).then(function (employeeCollection) {
+        _this3.page = employeeCollection.entity.page;
         return employeeCollection.entity._embedded.employees.map(function (employee) {
           return client({
             method: 'GET',
@@ -41278,18 +41305,19 @@ var App = /*#__PURE__*/function (_React$Component) {
       }).then(function (employeePromises) {
         return when.all(employeePromises);
       }).done(function (employees) {
-        _this4.setState({
+        _this3.setState({
+          page: _this3.page,
           employees: employees,
-          attributes: Object.keys(_this4.schema.properties),
+          attributes: Object.keys(_this3.schema.properties),
           pageSize: pageSize,
-          links: _this4.links
+          links: _this3.links
         });
       });
     }
   }, {
     key: "refreshAndGoToLastPage",
     value: function refreshAndGoToLastPage(message) {
-      var _this5 = this;
+      var _this4 = this;
 
       follow(client, root, [{
         rel: 'employees',
@@ -41298,16 +41326,16 @@ var App = /*#__PURE__*/function (_React$Component) {
         }
       }]).done(function (response) {
         if (response.entity._links.last !== undefined) {
-          _this5.onNavigate(response.entity._links.last.href);
+          _this4.onNavigate(response.entity._links.last.href);
         } else {
-          _this5.onNavigate(response.entity._links.self.href);
+          _this4.onNavigate(response.entity._links.self.href);
         }
       });
     }
   }, {
     key: "refreshCurrentPage",
     value: function refreshCurrentPage(message) {
-      var _this6 = this;
+      var _this5 = this;
 
       follow(client, root, [{
         rel: 'employees',
@@ -41316,8 +41344,8 @@ var App = /*#__PURE__*/function (_React$Component) {
           page: this.state.page.number
         }
       }]).then(function (employeeCollection) {
-        _this6.links = employeeCollection.entity._links;
-        _this6.page = employeeCollection.entity.page;
+        _this5.links = employeeCollection.entity._links;
+        _this5.page = employeeCollection.entity.page;
         return employeeCollection.entity._embedded.employees.map(function (employee) {
           return client({
             method: 'GET',
@@ -41327,12 +41355,12 @@ var App = /*#__PURE__*/function (_React$Component) {
       }).then(function (employeePromises) {
         return when.all(employeePromises);
       }).then(function (employees) {
-        _this6.setState({
-          page: _this6.page,
+        _this5.setState({
+          page: _this5.page,
           employees: employees,
-          attributes: Object.keys(_this6.schema.properties),
-          pageSize: _this6.state.pageSize,
-          links: _this6.links
+          attributes: Object.keys(_this5.schema.properties),
+          pageSize: _this5.state.pageSize,
+          links: _this5.links
         });
       });
     }
@@ -41379,17 +41407,17 @@ var EmployeeList = /*#__PURE__*/function (_React$Component2) {
   var _super2 = _createSuper(EmployeeList);
 
   function EmployeeList(props) {
-    var _this7;
+    var _this6;
 
     _classCallCheck(this, EmployeeList);
 
-    _this7 = _super2.call(this, props);
-    _this7.handleNavFirst = _this7.handleNavFirst.bind(_assertThisInitialized(_this7));
-    _this7.handleNavPrev = _this7.handleNavPrev.bind(_assertThisInitialized(_this7));
-    _this7.handleNavNext = _this7.handleNavNext.bind(_assertThisInitialized(_this7));
-    _this7.handleNavLast = _this7.handleNavLast.bind(_assertThisInitialized(_this7));
-    _this7.handleInput = _this7.handleInput.bind(_assertThisInitialized(_this7));
-    return _this7;
+    _this6 = _super2.call(this, props);
+    _this6.handleNavFirst = _this6.handleNavFirst.bind(_assertThisInitialized(_this6));
+    _this6.handleNavPrev = _this6.handleNavPrev.bind(_assertThisInitialized(_this6));
+    _this6.handleNavNext = _this6.handleNavNext.bind(_assertThisInitialized(_this6));
+    _this6.handleNavLast = _this6.handleNavLast.bind(_assertThisInitialized(_this6));
+    _this6.handleInput = _this6.handleInput.bind(_assertThisInitialized(_this6));
+    return _this6;
   }
 
   _createClass(EmployeeList, [{
@@ -41431,15 +41459,15 @@ var EmployeeList = /*#__PURE__*/function (_React$Component2) {
   }, {
     key: "render",
     value: function render() {
-      var _this8 = this;
+      var _this7 = this;
 
       var employees = this.props.employees.map(function (employee) {
         return /*#__PURE__*/React.createElement(Employee, {
           key: employee.entity._links.self.href,
           employee: employee,
-          attributes: _this8.props.attributes,
-          onUpdate: _this8.props.onUpdate,
-          onDelete: _this8.props.onDelete
+          attributes: _this7.props.attributes,
+          onUpdate: _this7.props.onUpdate,
+          onDelete: _this7.props.onDelete
         });
       });
       var navLinks = [];
@@ -41489,13 +41517,13 @@ var Employee = /*#__PURE__*/function (_React$Component3) {
   var _super3 = _createSuper(Employee);
 
   function Employee(props) {
-    var _this9;
+    var _this8;
 
     _classCallCheck(this, Employee);
 
-    _this9 = _super3.call(this, props);
-    _this9.handleDelete = _this9.handleDelete.bind(_assertThisInitialized(_this9));
-    return _this9;
+    _this8 = _super3.call(this, props);
+    _this8.handleDelete = _this8.handleDelete.bind(_assertThisInitialized(_this8));
+    return _this8;
   }
 
   _createClass(Employee, [{
@@ -41506,10 +41534,11 @@ var Employee = /*#__PURE__*/function (_React$Component3) {
   }, {
     key: "render",
     value: function render() {
-      return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, this.props.employee.entity.firstName), /*#__PURE__*/React.createElement("td", null, this.props.employee.entity.lastName), /*#__PURE__*/React.createElement("td", null, this.props.employee.entity.description), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(UpdateDialog, {
+      return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, this.props.employee.entity.firstName), /*#__PURE__*/React.createElement("td", null, this.props.employee.entity.lastName), /*#__PURE__*/React.createElement("td", null, this.props.employee.entity.description), /*#__PURE__*/React.createElement("td", null, this.props.employee.entity.manager.name), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(UpdateDialog, {
         employee: this.props.employee,
         attributes: this.props.attributes,
-        onUpdate: this.props.onUpdate
+        onUpdate: this.props.onUpdate,
+        loggedInManager: this.props.loggedInManager
       })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
         onClick: this.handleDelete
       }, "Delete")));
@@ -41525,29 +41554,29 @@ var CreateDialog = /*#__PURE__*/function (_React$Component4) {
   var _super4 = _createSuper(CreateDialog);
 
   function CreateDialog(props) {
-    var _this10;
+    var _this9;
 
     _classCallCheck(this, CreateDialog);
 
-    _this10 = _super4.call(this, props);
-    _this10.handleSubmit = _this10.handleSubmit.bind(_assertThisInitialized(_this10));
-    return _this10;
+    _this9 = _super4.call(this, props);
+    _this9.handleSubmit = _this9.handleSubmit.bind(_assertThisInitialized(_this9));
+    return _this9;
   }
 
   _createClass(CreateDialog, [{
     key: "handleSubmit",
     value: function handleSubmit(e) {
-      var _this11 = this;
+      var _this10 = this;
 
       e.preventDefault();
       var newEmployee = {};
       this.props.attributes.forEach(function (attribute) {
-        newEmployee[attribute] = ReactDOM.findDOMNode(_this11.refs[attribute]).value.trim();
+        newEmployee[attribute] = ReactDOM.findDOMNode(_this10.refs[attribute]).value.trim();
       });
       this.props.onCreate(newEmployee); // clear out the dialog's inputs
 
       this.props.attributes.forEach(function (attribute) {
-        ReactDOM.findDOMNode(_this11.refs[attribute]).value = '';
+        ReactDOM.findDOMNode(_this10.refs[attribute]).value = '';
       }); // Navigate away from the dialog to hide it.
 
       window.location = "#";
@@ -41589,24 +41618,24 @@ var UpdateDialog = /*#__PURE__*/function (_React$Component5) {
   var _super5 = _createSuper(UpdateDialog);
 
   function UpdateDialog(props) {
-    var _this12;
+    var _this11;
 
     _classCallCheck(this, UpdateDialog);
 
-    _this12 = _super5.call(this, props);
-    _this12.handleSubmit = _this12.handleSubmit.bind(_assertThisInitialized(_this12));
-    return _this12;
+    _this11 = _super5.call(this, props);
+    _this11.handleSubmit = _this11.handleSubmit.bind(_assertThisInitialized(_this11));
+    return _this11;
   }
 
   _createClass(UpdateDialog, [{
     key: "handleSubmit",
     value: function handleSubmit(e) {
-      var _this13 = this;
+      var _this12 = this;
 
       e.preventDefault();
       var updatedEmployee = {};
       this.props.attributes.forEach(function (attribute) {
-        updatedEmployee[attribute] = ReactDOM.findDOMNode(_this13.refs[attribute]).value.trim();
+        updatedEmployee[attribute] = ReactDOM.findDOMNode(_this12.refs[attribute]).value.trim();
       });
       this.props.onUpdate(this.props.employee, updatedEmployee);
       window.location = "#";
@@ -41614,15 +41643,15 @@ var UpdateDialog = /*#__PURE__*/function (_React$Component5) {
   }, {
     key: "render",
     value: function render() {
-      var _this14 = this;
+      var _this13 = this;
 
       var inputs = this.props.attributes.map(function (attribute) {
         return /*#__PURE__*/React.createElement("p", {
-          key: _this14.props.employee.entity[attribute]
+          key: _this13.props.employee.entity[attribute]
         }, /*#__PURE__*/React.createElement("input", {
           type: "text",
           placeholder: attribute,
-          defaultValue: _this14.props.employee.entity[attribute],
+          defaultValue: _this13.props.employee.entity[attribute],
           ref: attribute,
           className: "field"
         }));
