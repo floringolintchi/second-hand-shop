@@ -9,7 +9,7 @@ import javax.persistence.Id;
 
 @Data
 @Entity
-public class RegisteredUsers {
+public class RegisteredUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -21,9 +21,9 @@ public class RegisteredUsers {
     private String adresaEmail;
     private String adresa;
 
-    private RegisteredUsers() {}
+    private RegisteredUser() {}
 
-    public RegisteredUsers(String password, String nume, String username, String adresaEmail, String adresa) {
+    public RegisteredUser(String password, String nume, String username, String adresaEmail, String adresa) {
         this.password = password;
         this.nume = nume;
         this.username = username;
