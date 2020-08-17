@@ -1,6 +1,6 @@
 package com.costache.shop.components;
 
-import com.costache.shop.entities.Employee;
+import com.costache.shop.entities.Desktop;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.core.annotation.HandleAfterCreate;
 import org.springframework.data.rest.core.annotation.HandleAfterDelete;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import static com.costache.shop.components.WebSocketConfiguration.*;
 
 @Component
-@RepositoryEventHandler(Employee.class)
+@RepositoryEventHandler(Desktop.class)
 public class EventHandler {
 
     private final SimpMessagingTemplate websocket;
@@ -27,26 +27,26 @@ public class EventHandler {
     }
 
     @HandleAfterCreate
-    public void newEmployee(Employee employee){
+    public void newDesktop(Desktop desktop){
         this.websocket.convertAndSend(
-                MESSAGE_PREFIX + "/newEmployee", getPath(employee));
+                MESSAGE_PREFIX + "/newDesktop", getPath(desktop));
     }
 
     @HandleAfterDelete
-    public void deleteEmployee(Employee employee) {
+    public void deleteDesktop(Desktop desktop) {
         this.websocket.convertAndSend(
-                MESSAGE_PREFIX + "/deleteEmployee", getPath(employee));
+                MESSAGE_PREFIX + "/deleteEmployee", getPath(desktop));
     }
 
     @HandleAfterSave
-    public void updateEmployee(Employee employee) {
+    public void updateDesktop(Desktop desktop) {
         this.websocket.convertAndSend(
-                MESSAGE_PREFIX + "/updateEmployee", getPath(employee));
+                MESSAGE_PREFIX + "/updateEmployee", getPath(desktop));
     }
 
-    private String getPath(Employee employee) {
-        return this.entityLinks.linkForItemResource(employee.getClass(),
-                employee.getId()).toUri().getPath();
+    private String getPath(Desktop desktop) {
+        return this.entityLinks.linkForItemResource(desktop.getClass(),
+                desktop.getId()).toUri().getPath();
     }
 
 }

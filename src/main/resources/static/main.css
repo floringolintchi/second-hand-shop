@@ -67,3 +67,8 @@ td, th {
 }
 
 .close:hover { background: #00d9ff; }
+
+.fancytable {
+    background: #F012FF
+
+}

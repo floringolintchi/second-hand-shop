@@ -41102,7 +41102,7 @@ var __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_RESULT__ = (function (r
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
+ //dasdasdad
 
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -41152,7 +41152,7 @@ var App = /*#__PURE__*/function (_React$Component) {
 
     _this = _super.call(this, props);
     _this.state = {
-      employees: [],
+      desktops: [],
       attributes: [],
       pageSize: 2,
       links: {}
@@ -41176,31 +41176,31 @@ var App = /*#__PURE__*/function (_React$Component) {
     }
   }, {
     key: "onUpdate",
-    value: function onUpdate(employee, updatedEmployee) {
+    value: function onUpdate(desktop, updatedDesktop) {
       var _this2 = this;
 
       client({
         method: 'PUT',
-        path: employee.entity._links.self.href,
-        entity: updatedEmployee,
+        path: desktop.entity._links.self.href,
+        entity: updatedDesktop,
         headers: {
           'Content-Type': 'application/json',
-          'If-Match': employee.headers.Etag
+          'If-Match': desktop.headers.Etag
         }
       }).done(function (response) {
         _this2.loadFromServer(_this2.state.pageSize);
       }, function (response) {
         if (response.status.code === 412) {
-          alert('DENIED: Unable to update ' + employee.entity._links.self.href + '. Your copy is stale.');
+          alert('DENIED: Unable to update ' + desktop.entity._links.self.href + '. Your copy is stale.');
         }
       });
     }
   }, {
     key: "onDelete",
-    value: function onDelete(employee) {
+    value: function onDelete(desktop) {
       client({
         method: 'DELETE',
-        path: employee.entity._links.self.href
+        path: desktop.entity._links.self.href
       });
     }
   }, {
@@ -41211,21 +41211,21 @@ var App = /*#__PURE__*/function (_React$Component) {
       client({
         method: 'GET',
         path: navUri
-      }).then(function (employeeCollection) {
-        _this3.links = employeeCollection.entity._links;
-        _this3.page = employeeCollection.entity.page;
-        return employeeCollection.entity._embedded.employees.map(function (employee) {
+      }).then(function (desktopCollection) {
+        _this3.links = desktopCollection.entity._links;
+        _this3.page = desktopCollection.entity.page;
+        return desktopCollection.entity._embedded.desktops.map(function (desktop) {
           return client({
             method: 'GET',
-            path: employee._links.self.href
+            path: desktop._links.self.href
           });
         });
-      }).then(function (employeePromises) {
-        return when.all(employeePromises);
-      }).done(function (employees) {
+      }).then(function (desktopPromises) {
+        return when.all(desktopPromises);
+      }).done(function (desktop) {
         _this3.setState({
           page: _this3.page,
-          employees: employees,
+          desktops: desktops,
           attributes: Object.keys(_this3.schema.properties),
           pageSize: _this3.state.pageSize,
           links: _this3.links
@@ -41234,12 +41234,12 @@ var App = /*#__PURE__*/function (_React$Component) {
     }
   }, {
     key: "onCreate",
-    value: function onCreate(newEmployee) {
-      follow(client, root, ['employees']).done(function (response) {
+    value: function onCreate(newDesktop) {
+      follow(client, root, ['desktops']).done(function (response) {
         client({
           method: 'POST',
           path: response.entity._links.self.href,
-          entity: newEmployee,
+          entity: newDesktop,
           headers: {
             'Content-Type': 'application/json'
           }
@@ -41252,34 +41252,34 @@ var App = /*#__PURE__*/function (_React$Component) {
       var _this4 = this;
 
       follow(client, root, [{
-        rel: 'employees',
+        rel: 'desktops',
         params: {
           size: pageSize
         }
-      }]).then(function (employeeCollection) {
+      }]).then(function (desktopCollection) {
         return client({
           method: 'GET',
-          path: employeeCollection.entity._links.profile.href,
+          path: desktopCollection.entity._links.profile.href,
           headers: {
             'Accept': 'application/schema+json'
           }
         }).then(function (schema) {
           _this4.schema = schema.entity;
-          _this4.links = employeeCollection.entity._links;
-          return employeeCollection;
+          _this4.links = desktopCollection.entity._links;
+          return desktopCollection;
         });
-      }).then(function (employeeCollection) {
-        return employeeCollection.entity._embedded.employees.map(function (employee) {
+      }).then(function (desktopCollection) {
+        return desktopCollection.entity._embedded.desktops.map(function (desktop) {
           return client({
             method: 'GET',
-            path: employee._links.self.href
+            path: desktop._links.self.href
           });
         });
-      }).then(function (employeePromises) {
-        return when.all(employeePromises);
-      }).done(function (employees) {
+      }).then(function (desktopPromises) {
+        return when.all(desktopPromises);
+      }).done(function (desktops) {
         _this4.setState({
-          employees: employees,
+          desktops: desktops,
           attributes: Object.keys(_this4.schema.properties),
           pageSize: pageSize,
           links: _this4.links
@@ -41292,15 +41292,15 @@ var App = /*#__PURE__*/function (_React$Component) {
       var _this5 = this;
 
       follow(client, root, [{
-        rel: 'employees',
+        rel: 'desktops',
         params: {
           size: this.state.pageSize
         }
       }]).done(function (response) {
         if (response.entity._links.last !== undefined) {
-          _this5.onNavigate(response.entity._links.last.href);
+          _this5.onDesktopNavigate(response.entity._links.last.href);
         } else {
-          _this5.onNavigate(response.entity._links.self.href);
+          _this5.onDesktopNavigate(response.entity._links.self.href);
         }
       });
     }
@@ -41310,26 +41310,26 @@ var App = /*#__PURE__*/function (_React$Component) {
       var _this6 = this;
 
       follow(client, root, [{
-        rel: 'employees',
+        rel: 'desktops',
         params: {
           size: this.state.pageSize,
           page: this.state.page.number
         }
-      }]).then(function (employeeCollection) {
-        _this6.links = employeeCollection.entity._links;
-        _this6.page = employeeCollection.entity.page;
-        return employeeCollection.entity._embedded.employees.map(function (employee) {
+      }]).then(function (desktopCollection) {
+        _this6.links = desktopCollection.entity._links;
+        _this6.page = desktopCollection.entity.page;
+        return desktopCollection.entity._embedded.desktops.map(function (desktop) {
           return client({
             method: 'GET',
-            path: employee._links.self.href
+            path: desktop._links.self.href
           });
         });
-      }).then(function (employeePromises) {
-        return when.all(employeePromises);
-      }).then(function (employees) {
+      }).then(function (desktopPromises) {
+        return when.all(desktopPromises);
+      }).then(function (desktops) {
         _this6.setState({
           page: _this6.page,
-          employees: employees,
+          desktops: desktops,
           attributes: Object.keys(_this6.schema.properties),
           pageSize: _this6.state.pageSize,
           links: _this6.links
@@ -41341,13 +41341,13 @@ var App = /*#__PURE__*/function (_React$Component) {
     value: function componentDidMount() {
       this.loadFromServer(this.state.pageSize);
       stompClient.register([{
-        route: '/topic/newEmployee',
+        route: '/topic/newDesktop',
         callback: this.refreshAndGoToLastPage
       }, {
-        route: '/topic/updateEmployee',
+        route: '/topic/updateDesktop',
         callback: this.refreshCurrentPage
       }, {
-        route: '/topic/deleteEmployee',
+        route: '/topic/deleteDesktop',
         callback: this.refreshCurrentPage
       }]);
     }
@@ -41357,8 +41357,8 @@ var App = /*#__PURE__*/function (_React$Component) {
       return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(CreateDialog, {
         attributes: this.state.attributes,
         onCreate: this.onCreate
-      }), /*#__PURE__*/React.createElement(EmployeeList, {
-        employees: this.state.employees,
+      }), /*#__PURE__*/React.createElement(DesktopList, {
+        desktops: this.state.desktops,
         links: this.state.links,
         pageSize: this.state.pageSize,
         attributes: this.state.attributes,
@@ -41373,15 +41373,15 @@ var App = /*#__PURE__*/function (_React$Component) {
   return App;
 }(React.Component);
 
-var EmployeeList = /*#__PURE__*/function (_React$Component2) {
-  _inherits(EmployeeList, _React$Component2);
+var DesktopList = /*#__PURE__*/function (_React$Component2) {
+  _inherits(DesktopList, _React$Component2);
 
-  var _super2 = _createSuper(EmployeeList);
+  var _super2 = _createSuper(DesktopList);
 
-  function EmployeeList(props) {
+  function DesktopList(props) {
     var _this7;
 
-    _classCallCheck(this, EmployeeList);
+    _classCallCheck(this, DesktopList);
 
     _this7 = _super2.call(this, props);
     _this7.handleNavFirst = _this7.handleNavFirst.bind(_assertThisInitialized(_this7));
@@ -41392,7 +41392,7 @@ var EmployeeList = /*#__PURE__*/function (_React$Component2) {
     return _this7;
   }
 
-  _createClass(EmployeeList, [{
+  _createClass(DesktopList, [{
     key: "handleInput",
     value: function handleInput(e) {
       e.preventDefault();
@@ -41433,10 +41433,10 @@ var EmployeeList = /*#__PURE__*/function (_React$Component2) {
     value: function render() {
       var _this8 = this;
 
-      var employees = this.props.employees.map(function (employee) {
-        return /*#__PURE__*/React.createElement(Employee, {
-          key: employee.entity._links.self.href,
-          employee: employee,
+      var desktops = this.props.desktops.map(function (desktop) {
+        return /*#__PURE__*/React.createElement(Desktop, {
+          key: desktop.entity._links.self.href,
+          desktop: desktop,
           attributes: _this8.props.attributes,
           onUpdate: _this8.props.onUpdate,
           onDelete: _this8.props.onDelete
@@ -41476,38 +41476,40 @@ var EmployeeList = /*#__PURE__*/function (_React$Component2) {
         ref: "pageSize",
         defaultValue: this.props.pageSize,
         onInput: this.handleInput
-      }), /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tbody", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "First Name"), /*#__PURE__*/React.createElement("th", null, "Last Name"), /*#__PURE__*/React.createElement("th", null, "Description"), /*#__PURE__*/React.createElement("th", null), /*#__PURE__*/React.createElement("th", null)), employees)), /*#__PURE__*/React.createElement("div", null, navLinks));
+      }), /*#__PURE__*/React.createElement("table", {
+        "class": "fancytable"
+      }, /*#__PURE__*/React.createElement("tbody", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Nume"), /*#__PURE__*/React.createElement("th", null, "Procesor"), /*#__PURE__*/React.createElement("th", null, "Descriere"), /*#__PURE__*/React.createElement("th", null), /*#__PURE__*/React.createElement("th", null)), desktops)), /*#__PURE__*/React.createElement("div", null, navLinks));
     }
   }]);
 
-  return EmployeeList;
+  return DesktopList;
 }(React.Component);
 
-var Employee = /*#__PURE__*/function (_React$Component3) {
-  _inherits(Employee, _React$Component3);
+var Desktop = /*#__PURE__*/function (_React$Component3) {
+  _inherits(Desktop, _React$Component3);
 
-  var _super3 = _createSuper(Employee);
+  var _super3 = _createSuper(Desktop);
 
-  function Employee(props) {
+  function Desktop(props) {
     var _this9;
 
-    _classCallCheck(this, Employee);
+    _classCallCheck(this, Desktop);
 
     _this9 = _super3.call(this, props);
     _this9.handleDelete = _this9.handleDelete.bind(_assertThisInitialized(_this9));
     return _this9;
   }
 
-  _createClass(Employee, [{
+  _createClass(Desktop, [{
     key: "handleDelete",
     value: function handleDelete() {
-      this.props.onDelete(this.props.employee);
+      this.props.onDelete(this.props.desktop);
     }
   }, {
     key: "render",
     value: function render() {
-      return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, this.props.employee.entity.firstName), /*#__PURE__*/React.createElement("td", null, this.props.employee.entity.lastName), /*#__PURE__*/React.createElement("td", null, this.props.employee.entity.description), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(UpdateDialog, {
-        employee: this.props.employee,
+      return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, this.props.desktop.entity.nume), /*#__PURE__*/React.createElement("td", null, this.props.desktop.entity.procesor), /*#__PURE__*/React.createElement("td", null, this.props.desktop.entity.descriere), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(UpdateDialog, {
+        desktop: this.props.desktop,
         attributes: this.props.attributes,
         onUpdate: this.props.onUpdate
       })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
@@ -41516,7 +41518,7 @@ var Employee = /*#__PURE__*/function (_React$Component3) {
     }
   }]);
 
-  return Employee;
+  return Desktop;
 }(React.Component);
 
 var CreateDialog = /*#__PURE__*/function (_React$Component4) {
@@ -41540,11 +41542,11 @@ var CreateDialog = /*#__PURE__*/function (_React$Component4) {
       var _this11 = this;
 
       e.preventDefault();
-      var newEmployee = {};
+      var newDesktop = {};
       this.props.attributes.forEach(function (attribute) {
-        newEmployee[attribute] = ReactDOM.findDOMNode(_this11.refs[attribute]).value.trim();
+        newDesktop[attribute] = ReactDOM.findDOMNode(_this11.refs[attribute]).value.trim();
       });
-      this.props.onCreate(newEmployee); // clear out the dialog's inputs
+      this.props.onCreate(newDesktop); // clear out the dialog's inputs
 
       this.props.attributes.forEach(function (attribute) {
         ReactDOM.findDOMNode(_this11.refs[attribute]).value = '';
@@ -41566,15 +41568,15 @@ var CreateDialog = /*#__PURE__*/function (_React$Component4) {
         }));
       });
       return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("a", {
-        href: "#createEmployee"
+        href: "#createDesktop"
       }, "Create"), /*#__PURE__*/React.createElement("div", {
-        id: "createEmployee",
+        id: "createDesktop",
         className: "modalDialog"
       }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("a", {
         href: "#",
         title: "Close",
         className: "close"
-      }, "X"), /*#__PURE__*/React.createElement("h2", null, "Create new employee"), /*#__PURE__*/React.createElement("form", null, inputs, /*#__PURE__*/React.createElement("button", {
+      }, "X"), /*#__PURE__*/React.createElement("h2", null, "Add new desktop"), /*#__PURE__*/React.createElement("form", null, inputs, /*#__PURE__*/React.createElement("button", {
         onClick: this.handleSubmit
       }, "Create")))));
     }
@@ -41604,11 +41606,11 @@ var UpdateDialog = /*#__PURE__*/function (_React$Component5) {
       var _this13 = this;
 
       e.preventDefault();
-      var updatedEmployee = {};
+      var updatedDesktop = {};
       this.props.attributes.forEach(function (attribute) {
-        updatedEmployee[attribute] = ReactDOM.findDOMNode(_this13.refs[attribute]).value.trim();
+        updatedDesktop[attribute] = ReactDOM.findDOMNode(_this13.refs[attribute]).value.trim();
       });
-      this.props.onUpdate(this.props.employee, updatedEmployee);
+      this.props.onUpdate(this.props.desktop, updatedDesktop);
       window.location = "#";
     }
   }, {
@@ -41618,18 +41620,18 @@ var UpdateDialog = /*#__PURE__*/function (_React$Component5) {
 
       var inputs = this.props.attributes.map(function (attribute) {
         return /*#__PURE__*/React.createElement("p", {
-          key: _this14.props.employee.entity[attribute]
+          key: _this14.props.desktop.entity[attribute]
         }, /*#__PURE__*/React.createElement("input", {
           type: "text",
           placeholder: attribute,
-          defaultValue: _this14.props.employee.entity[attribute],
+          defaultValue: _this14.props.desktop.entity[attribute],
           ref: attribute,
           className: "field"
         }));
       });
-      var dialogId = "updateEmployee-" + this.props.employee.entity._links.self.href;
+      var dialogId = "updateDesktop-" + this.props.desktop.entity._links.self.href;
       return /*#__PURE__*/React.createElement("div", {
-        key: this.props.employee.entity._links.self.href
+        key: this.props.desktop.entity._links.self.href
       }, /*#__PURE__*/React.createElement("a", {
         href: "#" + dialogId
       }, "Update"), /*#__PURE__*/React.createElement("div", {
@@ -41639,7 +41641,7 @@ var UpdateDialog = /*#__PURE__*/function (_React$Component5) {
         href: "#",
         title: "Close",
         className: "close"
-      }, "X"), /*#__PURE__*/React.createElement("h2", null, "Update an employee"), /*#__PURE__*/React.createElement("form", null, inputs, /*#__PURE__*/React.createElement("button", {
+      }, "X"), /*#__PURE__*/React.createElement("h2", null, "Update a desktop"), /*#__PURE__*/React.createElement("form", null, inputs, /*#__PURE__*/React.createElement("button", {
         onClick: this.handleSubmit
       }, "Update")))));
     }
