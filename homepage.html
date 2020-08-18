@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/3/w3.css">
+<body>
+
+ <!-- Navigation -->
+<nav class="w3-bar w3-black">
+  <a href="#home" class="w3-button w3-bar-item">Home</a>
+  <a href="#Calculatoare" class="w3-button w3-bar-item">Calculatoare</a>
+  <a href="#Wishlist" class="w3-button w3-bar-item">Wishlist</a>
+  <a href="#contact" class="w3-button w3-bar-item">Contact</a>
+</nav> 
+
+ <!-- Slide Show -->
+<section>
+  <img class="mySlides" src="bitwit.jpg" style="width:100%">
+  <img class="mySlides" src="examples.jpg" style="width:100%">
+  <img class="mySlides" src="walle.jpg" style="width:100%">
+</section>
+
+<script type="text/javascript">
+// Automatic Slideshow - change image every 3 seconds
+var myIndex = 0;
+carousel();
+
+function carousel() {
+  var i;
+  var x = document.getElementsByClassName("mySlides");
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "none";
+  }
+  myIndex++;
+  if (myIndex > x.length) {myIndex = 1}
+  x[myIndex-1].style.display = "block";
+  setTimeout(carousel, 3000);
+}
+</script>
+
+ <section class="w3-container w3-center" style="max-width:600px">
+  <h2 class="w3-wide">Magazinul nostru</h2>
+  <p class="w3-opacity"><i>Calculatoare SH</i></p>
+  <p class="w3-justify"><i>Scopul nostru este să ajutăm persoanele care își doresc calculatoare fără să plătească prea mult și să reducem impactul nostru asupta mediului utilizând calculatoarele până când nu mai funcționează.</i></p>
+</section>
+
+ <section class="w3-row-padding w3-center w3-light-grey">
+    <h2 class="w3-wide">Membrii echipei</h2>
+  <article class="w3-third">
+    <p>Andrei</p>
+    <img src="Andrei.jpg" alt="Andrei" style="width:100%">
+  </article>
+  <article class="w3-third">
+    <p>Ionica</p>
+    <img src="Ionica.jpg" alt="Ionica" style="width:100%">
+  </article>
+  <article class="w3-third">
+    <p>Mihai</p>
+    <img src="Mihai.jpg" alt="Mihai" style="width:100%">
+  </article>
+</section> 
+
+</body>
+</html>
