@@ -11,7 +11,7 @@ public class HomeController {
 
     @RequestMapping("/calculatoare")
     void handleFoo(HttpServletResponse response) throws IOException {
-        response.sendRedirect("http://localhost:3000/");
+        response.sendRedirect("http://localhost:3006/");
     }
 
     @RequestMapping(value = "/")
@@ -29,5 +29,8 @@ public class HomeController {
 
     @RequestMapping(value = "/contact")
     public String contact() { return "contact"; }
+
+    @RequestMapping(value = "/ghiduri")
+    public String ghiduri() { return "ghiduri"; }
 
 }
