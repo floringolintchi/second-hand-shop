@@ -15,3 +15,10 @@ In order to specify a port for the frontend to run in you can place the followin
 "start": "set PORT=3006 && react-scripts start"
 
 This varies based on OS (consult stackoverflow link, this info is taken from there). 
+
+---------------
+
+user is user
+password is 123
+
+this can be changed from application.properties
