@@ -18,7 +18,7 @@ This varies based on OS (consult stackoverflow link, this info is taken from the
 
 ---------------
 
-user is user
-password is 123
+user is "user"
+password is "123"
 
 this can be changed from application.properties
