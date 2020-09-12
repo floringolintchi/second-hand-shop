@@ -9,6 +9,9 @@ import java.io.IOException;
 @Controller
 public class HomeController {
 
+    @RequestMapping(value = "/ghiduri")
+    public String ghiduri() { return "ghiduri"; }
+
     @RequestMapping("/calculatoare")
     void handleFoo(HttpServletResponse response) throws IOException {
         response.sendRedirect("http://localhost:3006/");
@@ -29,8 +32,5 @@ public class HomeController {
 
     @RequestMapping(value = "/contact")
     public String contact() { return "contact"; }
-
-    @RequestMapping(value = "/ghiduri")
-    public String ghiduri() { return "ghiduri"; }
 
 }
